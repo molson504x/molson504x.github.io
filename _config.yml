@@ -8,11 +8,11 @@ url: 'https://molson504x.github.io'
 # Author Settings
 author: Matt Olson
 author-img: me.jpg
-about-author: I'm an App Modernization Consultant for <a href="http://www.xpirit.com">Xpirit</a> specializing in Azure and GitHub solutions.
+about-author: I'm an App Modernization Consultant for <a href="http://www.xpirit.com" target="_blank">Xpirit</a> specializing in Azure and GitHub solutions.
 #social-twitter: 
 #social-facebook: 
 social-github: molson504x 
-#social-linkedin: 
+social-linkedin: matt-olson-1445886b
 social-email: molson@xpirit.com
 
 # Build Settings

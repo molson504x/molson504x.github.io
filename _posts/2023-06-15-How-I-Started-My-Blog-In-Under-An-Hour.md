@@ -43,7 +43,26 @@ title: The name of your blog
 theme: minima
 ```
 > **Note**
-> Other themes for Jekyll may use extra parameters, such as parameters for social media handles or images.  This is just for the basic themes offered natively on GitHub.
+> Other themes for Jekyll may use extra parameters, such as parameters for social media handles or images.  This is just for the basic themes offered natively on GitHub.  I'm using a modified version of [artemsheludko/flexible-jekyll](https://github.com/artemsheludko/flexible-jekyll) theme for this blog.
 
-> **Note**
-> I'm using a modified version of [artemsheludko/flexible-jekyll](https://github.com/artemsheludko/flexible-jekyll) theme for this blog.
+![Screenshot of blog with Minima theme]({{site.baseurl}}/assets/img/how-i-started-my-blog/minima-genesis.png)
+
+## Your First Blog Post
+And just like that, you've got a blog site set up!  Now it's time to make your first post.  This is pretty easy - it's a markdown file, something like this:
+``` md
+---
+title: How I Started My Blog In Under An Hour
+date: 2023-05-31 10:00:00 -0400
+description: I decided to start blogging again, and needed to spin up a blog site.  GitHub pages is a great platform for this, so I decided to show how I managed to spin up my new blog in under an hour as my first blog post on the new blog site.  The best part is it is 100% free, and you can do it too.
+tags: [GitHub Pages, GitHub, Pages, Technology]
+---
+
+Your blog content goes here
+```
+
+You'll need to save your file using a specific format: `yyyy-mm-dd-title` (ex: 2023-05-31-How-I-Started-My-Blog-In-Under-An-Hour.md).  Save that into a folder named `_posts` and voila, you'll have your first blog post!
+
+![Screenshot of a first blog post with Minima theme]({{site.baseurl}}/assets/img/how-i-started-my-blog/minima-first-post.png))
+
+## Conclusion
+And now, there you go.  You've set up your first blog site in under an hour, hosted on GitHub pages.  Of course, there's lots of extra customization you can do with themes and other Jekyll plugins, but this is the basics to get a blog set up.
