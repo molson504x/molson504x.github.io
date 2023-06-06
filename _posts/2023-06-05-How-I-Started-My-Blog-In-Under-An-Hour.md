@@ -3,6 +3,8 @@ layout: post
 title: How I Started My Blog In Under An Hour
 date: 2023-06-05 10:00:00 -0400
 description: I decided to start blogging again, and needed to spin up a blog site.  GitHub pages is a great platform for this, so I decided to show how I managed to spin up my new blog in under an hour as my first blog post on the new blog site.  The best part is it is 100% free, and you can do it too.
+img: how-i-started-my-blog/octocat.png
+fig-caption: My Octocat
 tags: [GitHub Pages, GitHub, Pages, Technology]
 ---
 Everyone seems to have a blog now, and it is one of the best ways to create and maintain a "personal brand".  It is an easy way to share knowledge with the world, and as your blog grows in popularity people will also begin to recognize you as an authority in whatever field you're writing about.  The hardest part of starting a blog is, well, starting one!  Where should you host it?  Should you use Wordpress, or some other platform?  Should you buy your own custom domain for it or host it on someone else's platform?  Do you have to be a good writer to start a blog? (here's a hint: if I'm doing it, then you don't have to be that good of a writer!)
