@@ -2,15 +2,12 @@
 layout: post
 title: My Thoughts On The GitHub Actions Runner Controller
 date: 2023-08-07 10:00:00 -0400
-description: 'GitHub Actions can be run using one of two options: Self-Hosted Runners or GitHub-Hosted Runners.  Traditionally, Self-Hosted runners are hosted on dedicated VM's, but GitHub is developing a Kubernetes Operator Pattern workload called the GitHub Actions Runner Controller.  In this post, I'll explore the process of deploying, customizing, and using the Actions Runner Controller and give my recommendations on when to use it and not to use it.'
+description: >
+  GitHub Actions can be run using one of two options: Self-Hosted Runners or GitHub-Hosted Runners.  Traditionally, Self-Hosted runners are hosted on dedicated VM's, but GitHub is developing a Kubernetes Operator Pattern workload called the GitHub Actions Runner Controller.  In this post, I'll explore the process of deploying, customizing, and using the Actions Runner Controller and give my recommendations on when to use it and not to use it.
 img: github-actions-runner-controller/hero.png
 fig-caption: GitHub Actions Runner Controller Logo
 tags: [GitHub Actions, GitHub, DevOps]
 ---
-
-> **NOTE**
-> At the time of writing, GitHub Actions Runner controller is still in beta, so I would not consider it production-ready.  
-
 The [GitHub Actions Runner Controller (ARC)](https://github.com/actions/actions-runner-controller/blob/master/docs/about-arc.md) is a Kubernetes-based solution to hosting the GitHub Actions Self-Hosted Runners within a containerized environment.  It follows the [Kubernertes Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/), which essentially consists of an "operator" or controller workload which then deploys job pods on an as-needed basis within the Kubernetes cluster and is configured based on a set of [Custom Resource Definitions (CRDs)](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).  Essentially what happens is there's an "Operator" or controller running which is polling the cluster for updates to a set of CRDs, and if it sees updates to these CRDs it'll perform some sort of operation.  For example, if the Operator sees a new `RunnerDeployment` get created, it'll automatically deploy a new `Runner` resource and a new Pod which will host this runner.
 
 ![GitHub ARC Process Diagram](https://user-images.githubusercontent.com/53718047/183928236-ddf72c15-1d11-4304-ad6f-0a0ff251ca55.jpg)
