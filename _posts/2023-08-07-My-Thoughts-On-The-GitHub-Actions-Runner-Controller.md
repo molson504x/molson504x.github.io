@@ -8,7 +8,7 @@ img: github-actions-runner-controller/hero.png
 fig-caption: GitHub Actions Runner Controller Logo
 tags: [GitHub Actions, GitHub, DevOps]
 ---
-The [GitHub Actions Runner Controller (ARC)](https://github.com/actions/actions-runner-controller/blob/master/docs/about-arc.md) is a Kubernetes-based solution to hosting the GitHub Actions Self-Hosted Runners within a containerized environment.  It follows the [Kubernertes Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/), which essentially consists of an "operator" or controller workload which then deploys job pods on an as-needed basis within the Kubernetes cluster and is configured based on a set of [Custom Resource Definitions (CRDs)](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).  Essentially what happens is there's an "Operator" or controller running which is polling the cluster for updates to a set of CRDs, and if it sees updates to these CRDs it'll perform some sort of operation.  For example, if the Operator sees a new `RunnerDeployment` get created, it'll automatically deploy a new `Runner` resource and a new Pod which will host this runner.
+The [GitHub Actions Runner Controller (ARC)](https://github.com/actions/actions-runner-controller/blob/master/docs/about-arc.md) is a Kubernetes-based solution for hosting GitHub Actions Self-Hosted Runners within a containerized environment.  It follows the [Kubernertes Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/), which essentially consists of an "operator" or controller workload which monitors the Kubernetes cluster and manages a set of Kubernetes workloads based on [Custom Resource Definitions (CRDs)](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/).  For example, if the operator sees a new `RunnnerSet` get created, it'll automatically create a new 'StatefulSet' based off of the configuration specified in the `RunnerSet`.
 
 ![GitHub ARC Process Diagram](https://user-images.githubusercontent.com/53718047/183928236-ddf72c15-1d11-4304-ad6f-0a0ff251ca55.jpg)
 
@@ -16,13 +16,13 @@ By using ARC, it becomes easier to:
 
 * Deploy self-hosted runners on a Kubernetes cluster with a simple, repeatable set of commands
 * Auto-scale runners based on demand
-* Setup across GitHub editions (including GitHub Enterprise and GitHub Enterprise Cloud)
+* Set up self-hosted runners across GitHub Offerings (including GitHub Enterprise and GitHub Enterprise Cloud)
 
 ## tl;dr
 
 This blog post is a bit long.  There's a lot of details around GitHub ARC that I wanted to cover from setting up a very basic lab environment, enabling scaling, and some observations I've made while testing it out.  Because of the length of this post, I'm going to lead off with my recommendations and conclusions.
 
-When able, I would recommend using either GitHub-Hosted Runners or GitHub ARC.  VM-based runners should be a "last-resort" in my opinion.  The way a VM-based runner works is different enough from a GitHub-Hosted runner that it can lead to inconsistencies between each mechanism.  GitHub ARC is designed to closely mimic GitHub-Hosted runners in terms of their ephemeral nature, pre-loaded software (it's not an exact match, but it's closer than what you get with a self-hosted runner), and scalability (being able to scale from 0 and spin up and down runners on an as-needed basis).  Of course, I understand that there are circumstances where GitHub ARC would not work for a solution, and in those cases VM-based runners are a good solution.  But if you already have a Kubernetes cluster that has some processing power to spare I would recommend using GitHub ARC.
+When able, I would recommend using either GitHub-Hosted Runners or GitHub ARC.  VM-based runners should be a "last-resort" in my opinion.  The way a VM-based runner works is different when compared to GitHub-Hosted runner which can lead to inconsistencies in workload results.  GitHub ARC is designed to closely mimic GitHub-Hosted runners in terms of their ephemeral nature, pre-loaded software (it's not an exact match, but it's closer than what you get with a self-hosted runner), and scalability (being able to scale from 0 and spin up and down runners on an as-needed basis).  Of course, I understand that there are circumstances where GitHub ARC would not work for a solution, and in those cases VM-based runners are still a good solution.  But if you already have a Kubernetes cluster that has some processing power to spare I would recommend using GitHub ARC.
 
 ## Setting up ARC
 
@@ -32,7 +32,7 @@ ARC is designed to run on a Kubernetes cluster.  I'm going to host it on Azure K
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.8.2/cert-manager.yaml
 ```
 
-Another thing you'll need is a Personal Access Token (PAT) for ARC to authenticate to GitHub.   To generate a PAT token, log in to your GitHub Account and navigate to "Create New Token".  You'll need to give it all "repo" access.  Store this token value in a safe place for now - we'll need it to configure ARC.
+Another thing you'll need is a way to authenticate GitHub ARC to GitHub.  For my purposes, I'm going to use a Personal Access Token (PAT).  GitHub ARC supports PAT, GitHub Apps, or GitHub basic auth (username/password) for authentication.  In an enterprise scenario, I would recommend using a GitHub App because it provides an increased API quota and a centralized location to manage client secrets and manage permissions.
 
 > **NOTE**:
 > You can set up GitHub ARC using a GitHub App instead of a PAT token.  Those instructions can be found [here](https://github.com/actions/actions-runner-controller/blob/master/docs/authenticating-to-the-github-api.md).  Since I was just setting up a test bench in a private repository in my personal organization, I used a PAT token.
@@ -58,7 +58,7 @@ Once that completes, it's time to create the runners.  There's two main ways to 
 
 * Deployments are used for stateless applications and StatefulSets should be used for stateful applications
 * Pods in a deployment are interchangeable whereas pods in a StatefulSet are not
-* Deployments require a service to enable interaction with pods, while a headless service handles the pods' network ID in StatefulSets
+* Deployments require a service to enable interaction with pods, while a headless service handles the pods' network IDs in StatefulSets
 * In a deployment, the replicas all share a single volume and PVC.  In a StatefulSet, each pod has its own volume and PVC
 
 For this demo, I'm going to use a `RunnerSet`.  A basic `RunnerSet` deployment looks like this:
@@ -101,7 +101,7 @@ NAME        DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 my-runner   1         1         1            1           34s
 ```
 
-Great!  We now have a self-hosted runner running in our repository.  Let me emphasize - we have **ONE** runner running.  While that'll work for this example, it probably won't work for most organizations and enterprises.  ARC can be scaled manually by setting the `replicas` in the `RunnerSet` and can also be [automatically scaled](https://github.com/actions/actions-runner-controller/blob/master/docs/automatically-scaling-runners.md).  This includes the ability to [autoscale to/from 0](https://github.com/actions/actions-runner-controller/blob/master/docs/automatically-scaling-runners.md#autoscaling-tofrom-0).  We will use pull-driven scaling for this example, and update our previous `RunnerSet` deployment to now include a `HorizontalRunnerAutoscaler` CRD:
+Great!  We now have a self-hosted runner running in the Kubernetes cluster, and it is assigned to our repository.  Let me emphasize - we have **ONE** runner running.  While that'll work for this example, it probably won't work for most organizations and enterprises.  ARC can be scaled manually by setting the `replicas` in the `RunnerSet` (or `RunnerDeployment`) and can also be [automatically scaled](https://github.com/actions/actions-runner-controller/blob/master/docs/automatically-scaling-runners.md).  This includes the ability to [autoscale to/from 0](https://github.com/actions/actions-runner-controller/blob/master/docs/automatically-scaling-runners.md#autoscaling-tofrom-0).  We will use pull-driven scaling for this example, and update our previous `RunnerSet` deployment to now include a `HorizontalRunnerAutoscaler`:
 
 ``` yaml
 # RunnerSet elided
@@ -137,11 +137,11 @@ NAME        DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 my-runner   0         0         0            0           90m
 ```
 
-Additionally, there are now no longer any running pods in the cluster because we've told the autoscaler to scale down to 0 when nothing is required.
+Additionally, there are now no longer any running Runners in the cluster because we've told the autoscaler to scale down to 0 when nothing is required.
 
 ## Using The Self-Hosted Runner
 
-Using a self-hosted runner deployed by GitHub ARC is the same as any other self-hosted runner.  In the workflow's `runs-on` clause, we can specify an array containing "self-hosted" and other labels that point to our self-hosted ARC runners.  For example, the one deployed above has an extra label of "github-arc" so I could specify `runs-on: [self-hosted, Linux, X64, github-arc]` to target the ARC runners.  For example:
+Using a self-hosted runner deployed by GitHub ARC is the same as any other self-hosted runner.  In the workflow's `runs-on` clause, we can specify an array containing "self-hosted" and other labels that point to our self-hosted ARC runners.  For example, the one deployed above has an extra label of "github-arc" so I could specify `runs-on: [self-hosted, Linux, X64, github-arc]` to target the ARC runners.
 
 ``` yml
 jobs:
@@ -156,6 +156,7 @@ jobs:
 There are a couple of key differences I've found between the ARC runner and the VM-based runners:
 
 1. GitHub ARC runners are ephemeral, whereas VM-based runners are not.  This means that every time you run a new workflow using an ARC-based runner, you get a totally new runner instance; the pod exits and restarts after each run.  A VM-based runner **does not** have a totally clean environment every time a workflow run occurs.  If you need proof of that, just navigate to the work folder (this defaults to `_work`) and you can find the contents of whatever repository you ran a workflow against, along with a cache of every action that was used in that workflow.  This sort of behavior is much different than what a GitHub-hosted runner provides - a GitHub-hosted runner *always* starts with a clean instance.
+
     *ARC-Based Runner*
 
     ``` text
@@ -199,7 +200,8 @@ There are a couple of key differences I've found between the ARC runner and the 
       '64b0a3f000220aad441a137c43d3b8c65fb08ed2'
     ```
   
-    Looking at the logs, in the ARC-based runner we see a line in there, `Deleting the contents of '/runner/_work/github-arc/github-arc'`.  This is due to that directory being automatically created and the default of the `checkout` action's `clean` input being set to `true` which triggers this behavior.  The directory is actually empty before the `checkout` step runs.  This can be verified by adding a step that checks for the existance of the directory and runs a `ls` command:
+    Looking at the logs, in the ARC-based runner we see a line in there, `Deleting the contents of '/runner/_work/github-arc/github-arc'`.  This is due to that directory being automatically created and the default of the `checkout` action's `clean` input being set to `true` which triggers this behavior.  The directory is actually empty before the `checkout` step runs.  This can be verified by adding a step that checks for the existence of the directory and runs a `ls` command:
+  
     *ARC-Based Runner*
 
     ``` text
@@ -233,6 +235,7 @@ There are a couple of key differences I've found between the ARC runner and the 
     ```
 
 1. Self-hosted runners allow you to manually installing dependencies, whereas GitHub-hosted runners recommend running "setup" actions.  This is because you don't have access to the underlying infrastructure on a GitHub-hosted runner.  GitHub ARC runners work in a similar manner to the GitHub-hosted runners - the recommendation is to use a "setup" action (such as `actions/setup-node`) to install dependencies.  This is due to the ephemeral nature of ARC runners as opposed to the non-ephemeral nature of VM-based runners.  As a test, I set up a VM-based runner and an ARC-based runner and ran a simple workflow twice that installs Node 16.  While it did not fail, there is a clear difference in the output logs:
+  
    *ARC-Based Runner*
 
     ``` text
