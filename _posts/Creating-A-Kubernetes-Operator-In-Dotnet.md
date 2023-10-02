@@ -3,7 +3,7 @@ layout: post
 title: Creating a Kubernetes Operator in .NET
 date: 2023-09-12 10:00:00 -0400
 description: >
-  {{TBD}}
+  The Kubernetes Operator pattern allows for deployment and management of complex and dynamic Kubernetes workloads.  It consists of a Kubernetes workload which monitors for Custom Resource Definition objects and maintains a desired state based off of parameters passed into those objects.  In this post, we'll take a look at the anatomy of an operator and how to create one using the KubeOps DotNet library.
 img: kubernetes-operator-dotnet/hero-image.jpeg
 fig-caption: A man orchestrating a process with many computers
 tags: [Kubernetes, dotnet, .NET]
@@ -11,7 +11,7 @@ tags: [Kubernetes, dotnet, .NET]
 
 > **Note:** The code seen in this post is based on KubeOps 7.6.0.  There is work in progress on version 8.0, but that is a preview build of the library and was not available when I started this research.  "Your mileage may vary."
 
-The [Kubernetes Operator Pattern][kubernetes-operator-pattern] is a Kubernetes development pattern aimed at simplifying complex Kubernetes workload deployments.  The idea of a Kubernetes Operator is similar to what you would think of when you think about a human who is operating a system - they know how the system is deployed, have a deep working knowledge of how it works, and they know how to react if a problem were to arise.  Kubernetes Operators work in a similar manner - they deploy and manage Kubernetes workloads, and they can also handle some error conditions for a given workload.
+The [Kubernetes Operator Pattern][kubernetes-operator-pattern] is a Kubernetes development pattern aimed at simplifying complex Kubernetes workload deployments.  The idea of a Kubernetes Operator is similar to a human operator for a complex system - they know how the system is deployed, have a deep understanding of how it works, and know how to react if a problem were to arise.  Kubernetes Operators work in a similar manner - they deploy and manage Kubernetes workloads, and they can also handle some error conditions for a given workload.
 
 Some use cases for a Kubernetes Operator might include:
 
@@ -32,45 +32,34 @@ Examples of commonly used Kubernetes Operators include:
 ![CNCF Kubernetes Operator Pattern Diagram][cncf-operator-pattern-diagram]
 *Kubernetes Operator Pattern High Level Diagram*
 
-A Kubernetes Operator consists of an Operator (or Controller) workload and [Custom Resource Definitions (CRDs)][crd].  At a high level, the Operator watches for changes to the CRDs, and based off of those changes it'll create and/or modify resources within the Kubernetes cluster.  Managing these resources is handled by a combination of Reconcilers, Finalizers, and Webhooks.
+A Kubernetes Operator consists of an Operator (or Controller) workload and [Custom Resource Definitions (CRDs)][crd].  At a high level, the Operator watches for changes to the CRDs, and based off of those changes it'll create and/or modify resources within the Kubernetes cluster.  Operators manage these resources by using a combination of Reconcilers, Finalizers, and Admission Webhooks.
 
 ### Reconcilers
 
-A Reconciler is exactly what it sounds like - it *reconciles* the resources which are managed by the operator.  Put another way, the reconciller is responsible for maintaining the desired state of whatever the Operator is managing.  It is the most heavily exercised component of the operator, and it's the only **required** component within an Operator.  Reconcilers are usually called for every event that triggers a Controller since they are responsible for ensuring the desired state of the system.
+A Reconciler is exactly what it sounds like - it maintains the desired state of whatever the Operator is managing.  It is the most heavily exercised component of the operator, and it's the only **required** component within an Operator.  Reconcilers are usually called for every event that triggers a Controller since they are responsible for ensuring the desired state of the system.
 
 ### Finalizers
 
-Finalizers are used to implement "cleanup" tasks when a Kubernetes resource is deleted.  This can include cleaning up resources, calling external API's to unregister services, and deleting other CRDs which could trigger other events within an Operator.  An object within a Kubernetes cluster cannot actually be deleted until **all** finalizers for that resource type have been completed; finalizers always run before an object is deleted.
+Finalizers are used to implement "cleanup" tasks when a Kubernetes resource is deleted.  This can include deleting resources, calling external API's to unregister services, and deleting other CRDs which could trigger other events within the cluster.  An object within a Kubernetes cluster will not  be deleted until **all** finalizers for that resource type have been completed.  If a finalizer is unable to run, the resource will not be deleted.  For more information on this, see [Kubernetes Finalizers documentation][kubernetes-finalizers-doc]
 
-> **NOTE** In the C# library I'm showing in this example, finalizers are only attached to entities.  In practice, a finalizer could be attached to any Kubernetes resource and can be used to execute tasks based on any Kubernetes resource.
+> **NOTE** In the C# library I'm showing in this example, finalizers are only registered to CRDs.  A finalizer could be registered to any Kubernetes resource and can be used to execute tasks based on any Kubernetes resource.
 
-### Webhooks
+### Admission Webhooks
 
-Webhooks are used to extend the [normal admission behavior][kubernetes-admission-behavior] of the Kubernetes API.  Kubernetes object admission has [two phases - mutation and validation][kubernetes-object-admission-phases].  The types of webhooks which can be created follow those two phases:
+Webhooks are used to extend the [normal admission behavior][kubernetes-admission-behavior] of the Kubernetes API.  The Kubernetes object admission process has [two phases - mutation and validation][kubernetes-object-admission-phases], and can be extended by making use of mutation and validation webhooks.
 
-* **Mutation** - these webhooks run when an object is created which matches a defined set of rules in the corresponding `MutatingAdmissionWebhook` configuration object.  These webhooks run in the *mutating* phase of object initialization, and will run in series.  The objective of these webhooks is to *mutate* a new object (such as filling in originally unset fields or adding additional labels).  This type of webhook should be used with caution, as it could lead to confusion among users when they get back an object that's different than what they intended to create.
-* **Validation** - these webhooks run in the *validation* phase of a Kubernetes object (which occurs after the mutating phase), and extend the object validation behavior.  They validate objects which match configuration set in a corresponding `ValidatingAdmissionWebhook` configuration object.  Because these are called after the mutation phase, these webhooks may not modify the objects.  These webhooks are all called in parallel.  Object validation failure will occur if any one of the validation webhooks fails.
+* **Mutation** - these webhooks run in the *mutastion* phase of object initialization, and will run in series.  The objective of these webhooks is to *mutate* a new object (such as filling in originally unset fields or adding additional labels).  This type of webhook should be used with caution, as it could lead to confusion among users when they get back an object that's different than what they intended to create.
+* **Validation** - these webhooks run in the *validation* phase of a Kubernetes object (which occurs after the mutation phase), and are used to extend the object validation behavior.  Because these are called after the mutation phase, these webhooks may not modify the objects.  These webhooks are all called in parallel.  Object validation failure will occur if any one of the validation webhooks fails.
 
 ## Writing an Operator
 
-Kubernetes operators can be written in a [variety of languages][writing-your-own-operator].  Since I'm familiar with C\#, I decided to write my sample operator in C\#.  The code samples in the remainder of this document will also be in C\#.  The premise of this operator is similar to the premise of any other operator - a controller will be monitoring for changes to a CRD Object, and will act based on the state change of that object.  In the case of this example, I'll be creating an operator which deploys a ConfigMap and a Deployment consisting of an Ubuntu pod.
+Kubernetes operators can be written in a [variety of languages][writing-your-own-operator].  Since I'm familiar with C\#, I decided to write my sample operator in C\#.  The premise of this operator is similar to the premise of any other operator - a controller will be monitoring for changes to a CRD Object, and will act based on the state change of that object.  In the case of this example, I'll be creating an operator which deploys a ConfigMap and a Deployment consisting of Ubuntu pods.
 
 ### KubeOps NuGet Package
 
-I'll be using the [KubeOps][kubeops] library for authoring my Operator in these examples.  This library is listed in the [official Kubernetes documentation][writing-your-own-operator] which is why I picked it.  Behind the scenes it is making use of the [KubernetesClient CSharp][kubernetesclient-csharp] library.  The KubeOps library extends the base AspNetCore project type and relies on the included DI framework and project patterns, so if you are familiar with this type of project these concepts should feel familiar.
+I'll be using the [KubeOps][kubeops] library for authoring my Operator in these examples.  The KubeOps library extends the base AspNetCore project type and relies on the included DI framework and project patterns, so if you are familiar with this type of project these concepts should feel familiar.
 
-The KubeOps library handles a lot of things for us, such as creating a Dockerfile for building the controller image, and creating the kubectl files to deploy RBAC, CRDs, and workloads required for our operator.  This allows us to work almost fully within C# for creating our operator.
-
-### Creating the project
-
-We will first create our solution and add the KubeOps NuGet package.  For this example, I'm going to use the *web* template which creates an empty baseline AspNetCore project.
-
-``` bash
-dotnet new web -n YourSolutionNameHere
-dotnet install KubeOps
-```
-
-In the project, create folders for our Entities, Controllers, Finalizers, Webhooks, and Reconcilers.  These folders will hold all of the parts required for our Operator.
+The KubeOps library handles a lot of things for us, such as creating a Dockerfile for building the controller image, and creating the kubectl files to deploy RBAC, CRDs, and workloads required for our operator.  This allows us to work almost fully within the C\# language for creating our operator.
 
 ### Defining the CRD Entity
 
@@ -80,7 +69,7 @@ Operators work based off of [CRD objects][crd], so first we need to define our C
 * **Status** - specifies the status fields used by the operator, if any.
 * **`CustomKubernetesEntity` Implementation** - Defines the actual entity.  Generally this will be an empty class.
 
-Additionally, I generally will define what I want my CRD to look like down below my entity in a comment just as a reference.  My empty Entity class looks like this:
+Additionally, I've defined what the CRD should look like down below my entity in a comment just as a reference - this will help create the `EntitySpec` class.
 
 ``` cs
 public class UbuntuV1Alpha1Entity:CustomKubernetesEntity<UbuntuV1Alpha1Entity.EntitySpec, UbuntuV1Alpha1Entity.EntityStatus>
@@ -111,7 +100,7 @@ spec:
 */
 ```
 
-Creating the entity spec is as easy as defining C# properties.  To add some documentation to these properties, there are some [validation attributes][kubeops-validation-documentation] which can be used to document and add validation to the entity.  This is all used to generate an OpenAPI schema.  Once complete, the `EntitySpec` class contains this:
+The `EntitySpec` class should just consist of C\# properties which define the CRD properties.  Additional [documentation and validation][kubeops-validation-documentation] can be added to further describe and validate the CRD spec.  The KubeOps library will use these properties and attributes to generate an OpenAPI schema, which is then used to generate the CRD object definition.
 
 ``` cs
 public class EntitySpec
@@ -129,11 +118,11 @@ public class EntitySpec
 }
 ```
 
-Lastly, we need to decorate our Entity class to define our CRD API definition.  To do this, use the `KubernetesEntity` attribute and specify the Group, Version, and Kind parameters:
+Lastly, we need to decorate our Entity class to define our CRD API definition.  To do this, use the `KubernetesEntity` attribute and specify the Group, Version, and Kind parameters.  KubeOps will use this information during the build process to generate the CRD definition and deployment file.
 
 ``` cs
 [KubernetesEntity(Group = "example.local", ApiVersion = "v1alpha1", Kind = "Ubuntu")]
-public class UbuntuEntity:CustomKubernetesEntity<UbuntuEntity.EntitySpec, UbuntuEntity.EntityStatus>
+public class UbuntuV1Alpha1Entity:CustomKubernetesEntity<UbuntuV1Alpha1Entity.EntitySpec, UbuntuV1Alpha1Entity.EntityStatus>
 {
     # Class definition code removed
 }
@@ -141,9 +130,9 @@ public class UbuntuEntity:CustomKubernetesEntity<UbuntuEntity.EntitySpec, Ubuntu
 
 ### Creating the Controller and Reconciler
 
-Now that our CRD is created, we need a controller to listen for changes to that CRD, and we need a reconciler to create and manage the Kubernetes resources created for that entity.  First, let's create our reconciler since that's what the controller will call.
+Now that the CRD is created, we need a Controller and a Reconciler.  The Reconciler code *could* live within the Controller methods, but it's normally contained outside of the Controller for organizational purposes.  Let's create the Reconciler first since that's going to be called by the Controller.
 
-Our reconciler needs to be able to create and update a `deployment` resource and a `configmap` resource.  For organization purposes, I'm going to create separate methods within the reconciler for handling these resources.  We'll be using an `IKubernetesClient` to handle calling the Kubernetes API.
+Our Reconciler needs to be able to create and update a `deployment` resource and a `configmap` resource.  For organizational purposes, I'll split these processes into a `ReconcileConfigMap` and `ReconcileDeployment` method, which then gets called by the main `ReconcileAsync` method.  The reconciliation methods will use an `IKubernetesClient` to make calls to the Kubernetes API for creating and modifying resources.
 
 ``` cs
 public class UbuntuV1Alpha1Reconciler
@@ -159,16 +148,16 @@ public class UbuntuV1Alpha1Reconciler
 
     public async Task ReconcileAsync(UbuntuV1Alpha1Entity entity)
     {
-        await ReconcileConfigMap(entity);
-        await ReconcileDeployment(entity);
+        await ReconcileConfigMapAsync(entity);
+        await ReconcileDeploymentAsync(entity);
     }
 }
 ```
 
-The code to do the actual resource reconciliation in this example is pretty simple - if the resource doesn't exist create it, and if the resource does exist update it.  I'm removing the code to create/update the actual resource objects, but this is the basic flow of what it looks like:
+The code to do the actual resource reconciliation in this example is pretty simple - if the resource doesn't exist create it, and if the resource does exist update it.  These resources are modeled as C\# objects within the `KubernetesClient` library, which is a dependency of the `KubeOps` library.
 
 ``` cs
-private async Task ReconcileConfigMap(UbuntuV1Alpha1Entity entity)
+private async Task ReconcileConfigMapAsync(UbuntuV1Alpha1Entity entity)
 {
     var @namespace = entity.Namespace();
     var entityName = entity.Name();
@@ -191,13 +180,13 @@ private async Task ReconcileConfigMap(UbuntuV1Alpha1Entity entity)
 }
 ```
 
-Now that the reconciler is created, let's create our Controller.  Our controller class will implement the `IResourceController` interface from the KubeOps library.  There are three overrideable methods within an IResourceController implementation:
+Now that the Reconciler is created, let's create the Controller.  Our Controller class will implement the `IResourceController` interface from the KubeOps library.  There are three overrideable methods within an `IResourceController` implementation:
 
 * `ReconcileAsync` is called whenever an event occurs which triggers reconciliation for an entity
 * `StatusUpdatedAsync` is called whenever a status change occurs for an entity
 * `DeletedAsync` is called whenever an entity is deleted from the cluster
 
-For this example, we will only implement the `ReconcileAsync` method since our CRD doesn't have any Status paramers and there's no additional logic that needs to occur on resource deletion.  The logic inside of `ReconcileAsync` is going to be very simple - just call the reconciler.
+For this example, we will only implement the `ReconcileAsync` method since our CRD doesn't have any Status paramers and there's no additional logic that needs to occur on resource deletion.  The logic inside of `ReconcileAsync` is going to be very simple - just call the Reconciler.
 
 ``` cs
 public class UbuntuV1AlphaController:IResourceController<UbuntuV1Alpha1Entity>
@@ -223,7 +212,7 @@ public class UbuntuV1AlphaController:IResourceController<UbuntuV1Alpha1Entity>
 
 ### RBAC Setup
 
-In order for our controller to be able to operate, it needs permissions to monitor the cluster for the CRDs as well as to create the necessary resources - in our case that's `ConfigMap` and `Deployment` resources.  To accomplish this, we need to add `EntityRbac` attributes to our controller, and we'll use one for each RBAC assignment we want to grant access to.
+In order for the Controller to be able to operate, it needs permissions to monitor the Kubernetes cluster for the CRDs as well as to create the necessary resources - in this case, those are `ConfigMap` and `Deployment` resources.  These RBAC permissions are declared by using `EntityRbac` attributes on the controller.  One `EntityRbac` attribute needs to be used for each resource type required for RBAC access.
 
 > **NOTE**: By default, KubeOps will generate a `ClusterRole` and `ClusterRoleBinding` for the `default` service account.  This can be changed by updating the generated yaml files.
 
@@ -239,7 +228,7 @@ public class UbuntuV1AlphaController:IResourceController<UbuntuV1Alpha1Entity>
 
 ### Creating the Finalizer
 
-Our Controller and Reconciler will create Kubernetes objects when they're invoked, so there needs to be a way to "clean up" those objects when our CRD is deleted.  This will prevent abandoned resources from occupying the cluster.  This is handled by a *finalizer*.
+The Controller and Reconciler will create Kubernetes resources when they're invoked, so there needs to be a way to clean up those resources when our CRD is deleted.  This will prevent abandoned resources from occupying the cluster.  This is handled by a *finalizer*.
 
 ``` cs
 public class UbuntuV1Alpha1Finalizer : IResourceFinalizer<UbuntuV1Alpha1Entity>
@@ -261,9 +250,9 @@ public class UbuntuV1Alpha1Finalizer : IResourceFinalizer<UbuntuV1Alpha1Entity>
 }
 ```
 
-In this example, the `DeleteDeploymentAsync` and `DeleteConfigmapAsync` methods just call the Kubernetes API to delete the created Deployment and Configmap resources, respectively.
+In this example, the `DeleteDeploymentAsync` and `DeleteConfigmapAsync` methods just call the Kubernetes API to delete the relevant Deployment and Configmap resources.
 
-To register our Entity to make use of our finalizer, we register it using the `IFinalizerManager` which is included in the KubeOps library.  This gets called from the `ReconcileAsync` method in the Controller.
+To register the Entity to make use of the Finalizer, register it using the `IFinalizerManager` which is a part of the KubeOps library.  This gets called from the `ReconcileAsync` method in the Controller.
 
 ``` cs
 await _finalizerManager.RegisterFinalizerAsync<UbuntuV1Alpha1Finalizer>(entity);
@@ -271,7 +260,7 @@ await _finalizerManager.RegisterFinalizerAsync<UbuntuV1Alpha1Finalizer>(entity);
 
 ### Setting up the Program.cs file
 
-The last step in all of this is setting up the `Program.cs` file.  This uses the familiar builder pattern that is used by a typical AspNetCore application to configure dependency injection and set the "starting point" for the application.  The only difference is that it will call a couple of extension methods included in the KubeOps library.
+The last step in all of this is setting up the `Program.cs` file.  This uses the familiar builder pattern that is used by a typical AspNetCore application to configure dependency injection and set the "starting point" for the application.  The only difference is that it will call a couple of extension methods from the KubeOps library.
 
 ``` cs
 var builder = WebApplication.CreateBuilder(args);
@@ -284,21 +273,21 @@ app.UseKubernetesOperator();
 await app.RunOperatorAsync(args);
 ```
 
-Since the Reconciler class we created is just essentially a "helper class", it has to be explicitly included in the dependency injection configuration.  The rest of the classes we've written implement an interface in the KubeOps library, and the `AddKubernetesOperator()` extension and the `RunOperatorAsync()` extension handle all of the routing and dependency injection for those classes.
+Since the Reconciler class is just essentially a "helper class", it has to be explicitly included in the dependency injection configuration.  The rest of the classes implement an interface in the KubeOps library, and the `AddKubernetesOperator()` extension and the `RunOperatorAsync()` extension handle all of the routing and dependency injection for those classes.
 
 ### Generating the Kubernetes Assets
 
-In order to build and package our operator, we need a Dockerfile.  Likewise, in order to deploy our operator workload and all relevant CRDs, Cluster Roles and workloads, we need to generate some kubeconfig files which contain the required resources.  The KubeOps library makes this very easy for us by generating those assets as part of the `dotnet build` process.  It does this by coming pre-packaged with a console utility which is then called with [a series of commands][kubeops-utility-commands] as part of the build process.  The default build parameters are generally adequate, however they can be customized [by setting some build property settings][kubeops-build-props-settings].  Additionally, any of the documented commands can be invoked outside of the build process by passing the command into a `dotnet run`.  For example, to generate the CRD objects without running a full build you could call `dotnet run generator crd`.
+A Dockerfile is needed In order to build and package this operator.  Likewise, some Kubeconfig files are needed in order to deploy the operator and its supporting CRDs, RBAC configurations, and workloads.  The KubeOps library makes this very easy by generating those assets as part of the `dotnet build` process.  It does this by coming pre-packaged with a console utility which is then called with [a series of commands][kubeops-utility-commands] as part of the build process.  The default build parameters are generally adequate, however they can be customized [by setting some build property settings][kubeops-build-props-settings].  Additionally, any of the documented commands can be invoked outside of the build process by passing the command into a `dotnet run`.  For example, to generate the CRD objects without running a full build you could run `dotnet run generator crd`.
 
-> **NOTE** There is a known issue currently with running a `dotnet build` command when your operator contains webhooks.  This is due to a requirement on the `csffl` library to generate certificates; if this library is not installed on your system it will fail to generate the operator kubeconfig file.  The operator can still be run locally, and the CRD kubeconfig files are still generated and can still be deployed.  This is handled in the Dockerfile so it will be successful with the `docker build` later.
+> **NOTE** There is a known issue currently with running a `dotnet build` command when your operator contains webhooks.  This is due to requiring the `cfssl`certificate generation library.  This can be downloaded by using the `curl` commands found in the generated Dockerfile (substitute the architecture in the URLs for your system's architecture), and then setting the `CFSSL_EXECUTABLES_PATH` environment variable to the path where those files can be found.  More information can be found in [this GitHub issue][github-cfssl-issue].
 
 ### Testing the operator locally
 
-Testing our operator locally requires three steps: deploy the CRDs, run the operator, and create a CRD object in our Kubernetes cluster.  The [KubeOps Command Utility][kubeops-utility-commands] we talked about before can handle installing our CRDs for us - the `dotnet run install` command deploys all of the CRD objects in the project.  This command does not install the Cluster Roles and Cluster Role bindings because it is intended to be used for testing purposes.
+Testing the operator locally requires three steps: deploy the CRDs, run the operator, and create a CRD object in our Kubernetes cluster.  The [KubeOps Command Utility][kubeops-utility-commands] can deploy the CRD definitions by using the `dotnet run install` command.
 
-The second step is to run our operator.  I'm using Visual Studio Code, and I'm going to use the debugger within VSCode to do this.  The operator can also just be run using `dotnet run` in a console, but running it in the Visual Studio Code debugger gives the added benefit of being able to step through the operator functions if we need to debug.  Either way, what will happen is a console application will be launched which runs a Kestrel web server.
+The second step is to run the operator.  This can be done in your IDE of choice by running the project in a Debugger, or by just running the `dotnet run` command.  The `dotnet run` command and your IDE's debugger will both start a Kestrel web server and serve the AspNetCore APIs, just like a normal AspNetCore project.  The advantage of using an IDE and a Debugger (such as Visual Studio Code) is that it allows for stepping through the Reconciler and Finalizer methods for debug purposes.
 
-Lastly, we need to deploy an instance of the CRD.  In the case of our Ubuntu CRD we created, that looks like this:
+Once the Operator is running, deploy an instance of the CRD.  This will cause the Controller to execute the `ReconcileAsync` method, which in turn will call the Reconciler and create the Deployment and ConfigMap resources.  This can be done using a console command similar to this:
 
 ``` bash
 cat << EOF | kubectl apply -f -
@@ -317,7 +306,7 @@ spec:
 EOF
 ```
 
-After running that command, we'll see a series of information logs showing that the object was created and seen by the controller, and that the reconciler was then called and did its job.  To confirm that the operator called the reconciler and all resources were created, we can query the kubernetes cluster for pods and configmaps.  In the case above, we deployed two ubuntu pods (in a single deployment) and one configmap:
+To confirm that the operator called the reconciler and all resources were created, query the kubernetes cluster for pods and configmaps.
 
 ``` sh
 kubectl get deployments
@@ -334,7 +323,7 @@ NAME               DATA   AGE
 ubuntu-example     1      2m13s
 ```
 
-Periodically, you'll also see the messages in the logs for reconciliation of this entity without any event issued by the Kubernetes cluster.  These will be listed with an event type of "Reconcile".  This is normal, and helps to ensure the desired state of the system is enforced.  
+The Operator will periodically re-run the Controller's `ReconcileAsync` method with an event type of "Reconcile" to ensure desired state is achieved and maintained.  This is normal, but it may cause some additional log noise.
 
 When we delete our entity, you'll see that the Finalizer gets called first, followed by our Webhooks, followed then by the Controller.  The finalizer will clean up the relevant resources, and then the Controller will run whatever is in the `DeletedAsync` method if one is specified.  Once the finalizer and reconciler are finished running, you'll be able to query the cluster and see that the configmap, deployment, and two pods are deleted along with our CRD.
 
@@ -385,9 +374,10 @@ The Kubernetes Operator pattern can simplify deploying complex workloads in a Ku
 [kubernetes-object-admission-phases]: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#admission-control-phases
 [writing-your-own-operator]: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/#writing-operator
 [kubeops]: https://github.com/buehler/dotnet-operator-sdk/tree/master
-[kubernetesclient-csharp]: https://github.com/kubernetes-client/csharp
 [cncf-operator-pattern-diagram]: https://www.cncf.io/wp-content/uploads/2022/07/k8s-operator-1800x1013.webp
 [kubeops-validation-documentation]: https://github.com/buehler/dotnet-operator-sdk/tree/master/src/KubeOps#validation
 [kubeops-build-props-settings]: https://github.com/buehler/dotnet-operator-sdk/blob/master/src/KubeOps/README.md#ms-build-extensions
 [kubeops-utility-commands]: https://github.com/buehler/dotnet-operator-sdk/blob/master/src/KubeOps/README.md#commands
 [kustomize-website]: https://kustomize.io/
+[kubernetes-finalizers-doc]: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/
+[github-cfssl-issue]: https://github.com/buehler/dotnet-operator-sdk/issues/586
