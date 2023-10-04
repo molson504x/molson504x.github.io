@@ -40,7 +40,7 @@ A Reconciler is exactly what it sounds like - it maintains the desired state of 
 
 ### Finalizers
 
-Finalizers are used to implement "cleanup" tasks when a Kubernetes resource is deleted.  This can include deleting resources, calling external API's to unregister services, and deleting other CRDs which could trigger other events within the cluster.  An object within a Kubernetes cluster will not  be deleted until **all** finalizers for that resource type have been completed.  If a finalizer is unable to run, the resource will not be deleted.  For more information on this, see [Kubernetes Finalizers documentation][kubernetes-finalizers-doc]
+Finalizers are used to implement "cleanup" tasks when a Kubernetes resource is deleted.  This can include deleting resources, calling external APIs to unregister services, and deleting other CRDs which could trigger other events within the cluster.  An object within a Kubernetes cluster will not  be deleted until **all** finalizers for that resource type have been completed.  If a finalizer is unable to run, the resource will not be deleted.  For more information on this, see [Kubernetes Finalizers documentation][kubernetes-finalizers-doc]
 
 > **NOTE** In the C# library I'm showing in this example, finalizers are only registered to CRDs.  A finalizer could be registered to any Kubernetes resource and can be used to execute tasks based on any Kubernetes resource.
 
@@ -72,16 +72,20 @@ Operators work based off of [CRD objects][crd], so first we need to define our C
 Additionally, I've defined what the CRD should look like down below my entity in a comment just as a reference - this will help create the `EntitySpec` class.
 
 ``` cs
+using k8s.Models;
+using KubeOps.Operator.Entities;
+using KubeOps.Operator.Entities.Annotations;
+
 public class UbuntuV1Alpha1Entity:CustomKubernetesEntity<UbuntuV1Alpha1Entity.EntitySpec, UbuntuV1Alpha1Entity.EntityStatus>
 {
     public class EntitySpec
     {
-
+        //Defined below
     }
 
     public class EntityStatus
     {
-
+        //Intentionally empty
     }
 }
 /*
@@ -362,7 +366,7 @@ To uninstall the operator, run `kubectl delete -k .` which will run the Kustomiz
 
 ## Conclusions
 
-The Kubernetes Operator pattern can simplify deploying complex workloads in a Kubernetes cluster.  They can be written in a variaty of popular programming languages, such as C#, with the only requirement being that they need to be able to run within a Kubernetes cluster.  They work by reading the state of the Kubernetes cluster and managing resources based on CRDs, other resources, and external services.  
+The Kubernetes Operator pattern can simplify deploying complex workloads in a Kubernetes cluster.  They can be written in a variety of popular programming languages, such as C# (using the [KubeOps][kubeops] library), with the only requirement being that they need to be able to run within a Kubernetes cluster.  They work by reading the state of the Kubernetes cluster and managing resources based on CRDs, other resources, and external services.  
 
 [kubernetes-operator-pattern]: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
 [crd]: https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/
