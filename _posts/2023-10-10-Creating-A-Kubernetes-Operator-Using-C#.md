@@ -1,7 +1,7 @@
 ---
 layout: post
-title: Creating a Kubernetes Operator in .NET
-date: 2023-09-12 10:00:00 -0400
+title: Creating a Kubernetes Operator Using C#
+date: 2023-10-10 10:00:00 -0400
 description: >
   The Kubernetes Operator pattern allows for deployment and management of complex and dynamic Kubernetes workloads.  It consists of a Kubernetes workload which monitors for Custom Resource Definition objects and maintains a desired state based off of parameters passed into those objects.  In this post, we'll take a look at the anatomy of an operator and how to create one using the KubeOps DotNet library.
 img: kubernetes-operator-dotnet/hero-image.jpeg
