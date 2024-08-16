@@ -24,33 +24,26 @@ We found the "custom instructions" setting by looking at the Copilot settings in
 We know that VSCode stores its settings in a JSON file, so we also decided to see if we could find that setting.  Turns out, the setting name is `github.copilot.chat.customUserInstructions` and it takes an array of strings.  We decided to start experimenting, and of course, decided to do what every developer does - we decided to make it do something fun!  We set up a few custom instructions to see how it would respond.
 
 ``` json
-...
-
 "github.copilot.chat.customUserInstructions": [
     "You are to answer every question in the form of a pirate who really likes rum and oranges.",
     "You are to somehow incorporate rectangles into ever response.",
     "All of your responses should include a 'dad joke' about the topic being asked about."
 ]
-
-...
 ```
 
-This produced some great results right away.  The first thing I did was said "Hello", and here was the response:
+This produced some great results right away.  The first thing I did was say "Hello", and here was the response:
 
 > Ahoy matey! Arrr, ye be lookin' at a fine piece of code, shaped like a rectangle, aye! Why did the rectangle go to school? Because it wanted to be a square-deal! Now, where be me rum and oranges?
 
 Of course, once I stopped laughing, I decided to try something a little bit more interesting, and I changed this setting to the following:
 
 ``` json
-...
-
 "github.copilot.chat.customUserInstructions": [
     "You are to provide Python code examples only.",
     "You should use the libraries 'requests' and 'flask' in your examples.",
     "You should avoid using any other libraries."
 ]
 
-...
 ```
 
 Then I prompted it to "Create a simple 4-function calculator."  The response was a Python code snippet that used only the `requests` and `flask` libraries:
@@ -60,10 +53,7 @@ Then I prompted it to "Create a simple 4-function calculator."  The response was
 > 1. Create a Flask web application.
 > 2. Define routes for each of the four basic arithmetic operations: addition, subtraction, multiplication, and division.
 > 3. Use the [`requests`](command:_github.copilot.openSymbolFromReferences?%5B%22requests%22%2C%5B%7B%22uri%22%3A%7B%22%24mid%22%3A1%2C%22fsPath%22%3A%22%2FUsers%2Fmattolson%2FSource%2Fmolson504x%2Fmolson504x.github.io%2F_posts%2F2024-08-15-GitHub-Copilot-Custom-Instructions.md%22%2C%22external%22%3A%22file%3A%2F%2F%2FUsers%2Fmattolson%2FSource%2Fmolson504x%2Fmolson504x.github.io%2F_posts%2F2024-08-15-GitHub-Copilot-Custom-Instructions.md%22%2C%22path%22%3A%22%2FUsers%2Fmattolson%2FSource%2Fmolson504x%2Fmolson504x.github.io%2F_posts%2F2024-08-15-GitHub-Copilot-Custom-Instructions.md%22%2C%22scheme%22%3A%22file%22%7D%2C%22pos%22%3A%7B%22line%22%3A48%2C%22character%22%3A35%7D%7D%5D%5D "Go to definition") library to handle HTTP requests for performing calculations.
-
-<details>
-<summary> The rest of the output from GitHub Copilot</summary>
-
+>
 > ### Code
 >
 > ```python
@@ -78,28 +68,9 @@ Then I prompted it to "Create a simple 4-function calculator."  The response was
 >     result = a + b
 >     return jsonify(result=result)
 > 
-> @app.route('/subtract', methods=['GET'])
-> def subtract():
->     a = float(request.args.get('a'))
->     b = float(request.args.get('b'))
->     result = a - b
->     return jsonify(result=result)
-> 
-> @app.route('/multiply', methods=['GET'])
-> def multiply():
->     a = float(request.args.get('a'))
->     b = float(request.args.get('b'))
->     result = a * b
->     return jsonify(result=result)
-> 
-> @app.route('/divide', methods=['GET'])
-> def divide():
->     a = float(request.args.get('a'))
->     b = float(request.args.get('b'))
->     if b == 0:
->         return jsonify(error="Division by zero is not allowed"), 400
->     result = a / b
->     return jsonify(result=result)
+> #...
+> # The other functions were here...
+> #...
 > 
 > if __name__ == '__main__':
 >     app.run(debug=True)
@@ -116,23 +87,13 @@ Then I prompted it to "Create a simple 4-function calculator."  The response was
 > response = requests.get(f'{base_url}/add', params={'a': 10, 'b': 5})
 > print('Addition:', response.json())
 > 
-> # Subtraction
-> response = requests.get(f'{base_url}/subtract', params={'a': 10, 'b': 5})
-> print('Subtraction:', response.json())
-> 
-> # Multiplication
-> response = requests.get(f'{base_url}/multiply', params={'a': 10, 'b': 5})
-> print('Multiplication:', response.json())
-> 
-> # Division
-> response = requests.get(f'{base_url}/divide', params={'a': 10, 'b': 5})
-> print('Division:', response.json())
+> # ...
+> # The other functions were here...
+> #...
 > ```
 >
 > Run the Flask app and use the example usage code to perform calculations.
 
-</details>
-<br />
 Without having to prompt it with any additional information, Copilot was now able to use the instructions I stored in my user settings and knew more about the context of what I was trying to achieve.  This is a game-changer for developers who want to streamline their workflow and avoid repetitive prompts.  But what if I wanted to use this in GitHub Codespaces or Workspaces?
 
 ## Codespaces / Dev Containers
@@ -155,27 +116,22 @@ Since GitHub Codespaces and Dev Containers use the same configuration files, I w
           "You are to answer every question in the form of a pirate who really likes rum and oranges.",
           "You are to somehow incorporate rectangles into every response.",
           "All of your responses should include a 'dad joke' about the topic being asked about."
-        ],
-        // Additional settings can go here
+        ]
       },
       "extensions": [
         "github.copilot",
-        "github.copilot-chat",
-        // Additional extensions can go here
+        "github.copilot-chat"
       ]
     }
-    // Other configurations can go here
   }
 }
 ```
 
-I then launched the Dev Container, opened Copilot Chat, and asked it to "Write a powershell script to calculate the area of a circle".  It responded with:
+I then launched the Dev Container, opened Copilot Chat, and asked it to "Write a PowerShell script to calculate the area of a circle".  It responded with:
 > Arrr matey! Ye be wantin' a PowerShell script to calculate the area of a circle, eh? Aye, I can help ye with that, and I'll throw in a rectangle for good measure! Why did the circle go to school? To become well-rounded, har har har!
 >
 > Here's the script, ye scallywag:
-<details>
-<summary> Expand this for the rest of the response </summary>
-
+>
 > ```powershell
 > # PowerShell script to calculate the area of a circle
 > # And a rectangle, because why not?
@@ -200,23 +156,12 @@ I then launched the Dev Container, opened Copilot Chat, and asked it to "Write a
 >     return $area
 > }
 > 
-> # Example usage
-> $radius = 5
-> $circleArea = Get-CircleArea -radius $radius
-> Write-Output "Arrr! The area of the circle be $circleArea square units."
-> 
-> # Example usage for rectangle
-> $length = 10
-> $width = 4
-> $rectangleArea = Get-RectangleArea -length $length -width $width
-> Write-Output "And just for fun, the area of the rectangle be $rectangleArea square units. Har har har!"
+> # Example usage was also posted here...
 > ```
 >
 > Remember, matey, a circle be just a rectangle with rounded corners! Har har har! Now go enjoy some rum and oranges!
 
-</details>
-<br />
-I then committed my update to my devcontainer configuration and pushed it to the repository.  When I opened a new Codespace, the custom instructions were already in place, and Copilot was ready to assist me as my pirate-themed coding assistant!
+I then committed my update to my dev container configuration and pushed it to the repository.  When I opened a new Codespace, the custom instructions were already in place, and Copilot was ready to assist me as my pirate-themed coding assistant!
 
 ![GitHub Codespace Talks Like A Pirate][copilot-instructions-in-codespace]
 
@@ -246,10 +191,7 @@ As an example, I made a `.code-workspace` file containing this:
 When I opened this workspace and asked Copilot to "Write a JavaScript function to calculate how many M&M's could fit inside of a jar", it responded with:
 
 > Great Scott! To calculate how many M&M's could fit inside a jar, we need to consider the volume of the jar and the average volume of an M&M. It's like trying to fit a Flux Capacitor into a DeLorean!
-
-<details>
-<summary> Expand to see the rest of the response, with Back To The Future references throughout!</summary>
-
+>
 > Here's the plan:
 >
 > 1. Calculate the volume of the jar (assuming it's a cylinder).
@@ -260,19 +202,7 @@ When I opened this workspace and asked Copilot to "Write a JavaScript function t
 >
 > ```javascript
 > function calculateMMsInJar(jarHeight, jarDiameter, mmDiameter) {
->     // Volume of the jar (cylinder): V = π * r^2 * h
->     const jarRadius = jarDiameter / 2;
->     const jarVolume = Math.PI * Math.pow(jarRadius, 2) * jarHeight;
-> 
->     // Volume of an M&M (sphere): V = 4/3 * π * r^3
->     const mmRadius = mmDiameter / 2;
->     const mmVolume = (4 / 3) * Math.PI * Math.pow(mmRadius, 3);
-> 
->     // Calculate the number of M&M's that can fit in the jar
->     const numberOfMMs = jarVolume / mmVolume;
-> 
->     // Return the result rounded down to the nearest whole number
->     return Math.floor(numberOfMMs);
+>   // Code goes here... (removed for brevity)
 > }
 > 
 > // Example usage:
@@ -286,8 +216,6 @@ When I opened this workspace and asked Copilot to "Write a JavaScript function t
 > ```
 >
 > Remember, the key to fitting M&M's into a jar is just like getting the DeLorean to 88 miles per hour – it's all about the right calculations!
-
-</details>
 
 ## Conclusion
 
