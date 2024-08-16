@@ -1,6 +1,6 @@
 remote_theme: molson504x/flexible-jekyll
 title: Matt's Technical Blog
-description: I'm Matt, an App Modernization Consultant specializing in solutions centered around Azure and GitHub.  I decided that it was time to get into blogging, so here I am!  
+description: I'm Matt, an App Modernization Consultant specializing in solutions centered around Azure and GitHub.  I decided that it was time to get into blogging, so here I am!  I'm excited to be sharing knowledge about topics I'm passionate about with the world, and I hope you find what I write here helpful.  
 permalink: '/:title'
 baseurl: '/'
 url: 'https://molson504x.github.io'
@@ -8,13 +8,12 @@ url: 'https://molson504x.github.io'
 # Author Settings
 author: Matt Olson
 author-img: me.jpg
-about-author: I'm an App Modernization Consultant for <a href="http://www.xpirit.com" target="_blank">Xpirit</a> specializing in Azure and GitHub solutions.
+about-author: I'm an App Modernization Consultant for <a href="https://xebia.com/digital-transformation/microsoft-services/" target="_blank">Xebia Microsoft Services</a> specializing in Azure and GitHub solutions, with a focus on GitHub Advanced Security and GitHub Copilot.  I'm excited to be able to share my knowledge with people through this blog, and I hope you're able to find it helful as well!
 #social-twitter: 
 #social-facebook: 
 social-github: molson504x 
-social-linkedin: matt-olson-1445886b
-social-email: molson@xpirit.com
-
+social-linkedin: molson504x
+social-email: matthew.olson@xebia.com
 # Build Settings
 #markdown: kramdown
 plugins:
