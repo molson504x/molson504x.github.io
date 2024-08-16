@@ -9,7 +9,11 @@ fig-caption: An AI assistant reading some custom instructions, dressed as a pira
 tags: [GitHub, Copilot, Custom Instructions, Coding, Development, AI]
 ---
 
-Earlier today, one of my colleagues ([Rob Bos](https://devopsjournal.io/)) found a new setting in the GitHub Copilot extension in Visual Studio Code that allows users to set custom instructions. This feature enables developers to provide specific guidance to Copilot, tailoring its suggestions to better fit their coding style and project requirements.  We've heard a lot of clients ask us about this exact ability, so we decided to explore it a bit further to see if it works and also decided to see if it works in Codespaces and Workspaces.
+Earlier today, one of my colleagues ([Rob Bos](https://devopsjournal.io/)) found a new setting in the GitHub Copilot extension in Visual Studio Code that allows users to set custom instructions.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/IsEXdeTbi1I?si=6aSApWpJ2-YbSpIs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+This feature enables developers to provide specific guidance to Copilot, tailoring its suggestions to better fit their coding style and project requirements.  We've heard a lot of clients ask us about this exact ability, so we decided to explore it a bit further to see if it works and also decided to see if it works in Codespaces and Workspaces.
 
 ## Context
 
