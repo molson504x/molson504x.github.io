@@ -9,6 +9,12 @@ fig-caption: An AI assistant reading some custom instructions, dressed as a pira
 tags: [GitHub, Copilot, Custom Instructions, Coding, Development, AI]
 ---
 
+### UPDATES
+
+* As part of the August update to VSCode, the `github.copilot.chat.customUserInstructions` setting has been removed.  This was replaced by a setting named `github.copilot.chat.experimental.codeGeneration.instructions` which takes a slightly different format, but also allows for passing in additional customizations.  I've updated this blog post to reflect this new schema.  For more information, see the [VSCode Changelog for the August 2024 release](https://code.visualstudio.com/updates/v1_93#_code-generation-instructions).  
+
+---
+
 Earlier today, one of my colleagues ([Rob Bos](https://devopsjournal.io/)) found a new setting in the GitHub Copilot extension in Visual Studio Code that allows users to set custom instructions.
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/IsEXdeTbi1I?si=6aSApWpJ2-YbSpIs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
@@ -28,10 +34,12 @@ We found the "custom instructions" setting by looking at the Copilot settings in
 We know that VSCode stores its settings in a JSON file, so we also decided to see if we could find that setting.  Turns out, the setting name is `github.copilot.chat.customUserInstructions` and it takes an array of strings.  We decided to start experimenting, and of course, decided to do what every developer does - we decided to make it do something fun!  We set up a few custom instructions to see how it would respond.
 
 ``` json
-"github.copilot.chat.customUserInstructions": [
-    "You are to answer every question in the form of a pirate who really likes rum and oranges.",
-    "You are to somehow incorporate rectangles into ever response.",
-    "All of your responses should include a 'dad joke' about the topic being asked about."
+...
+
+"github.copilot.chat.experimental.codeGeneration.instructions": [
+  {"text": "You are to answer every question in the form of a pirate who really likes rum and oranges."},
+  {"text": "You are to somehow incorporate rectangles into every response."},
+  {"text": "All of your responses should include a 'dad joke' about the topic being asked about."}
 ]
 ```
 
@@ -42,12 +50,15 @@ This produced some great results right away.  The first thing I did was say "Hel
 Of course, once I stopped laughing, I decided to try something a little bit more interesting, and I changed this setting to the following:
 
 ``` json
-"github.copilot.chat.customUserInstructions": [
-    "You are to provide Python code examples only.",
-    "You should use the libraries 'requests' and 'flask' in your examples.",
-    "You should avoid using any other libraries."
+...
+
+"github.copilot.chat.experimental.codeGeneration.instructions": [
+  {"text": "You are to provide Python code examples only."},
+  {"text": "You should use the libraries 'requests' and 'flask' in your examples."},
+  {"text": "You should avoid using any other libraries."}
 ]
 
+...
 ```
 
 Then I prompted it to "Create a simple 4-function calculator."  The response was a Python code snippet that used only the `requests` and `flask` libraries:
@@ -116,11 +127,12 @@ Since GitHub Codespaces and Dev Containers use the same configuration files, I w
   "customizations": {
     "vscode": {
       "settings": {
-        "github.copilot.chat.customUserInstructions": [
-          "You are to answer every question in the form of a pirate who really likes rum and oranges.",
-          "You are to somehow incorporate rectangles into every response.",
-          "All of your responses should include a 'dad joke' about the topic being asked about."
-        ]
+        "github.copilot.chat.experimental.codeGeneration.instructions": [
+          {"text": "You are to answer every question in the form of a pirate who really likes rum and oranges."},
+          {"text": "You are to somehow incorporate rectangles into every response."},
+          {"text": "All of your responses should include a 'dad joke' about the topic being asked about."}
+        ],
+        // Additional settings can go here
       },
       "extensions": [
         "github.copilot",
@@ -183,10 +195,10 @@ As an example, I made a `.code-workspace` file containing this:
         }
     ],
     "settings": {
-        "github.copilot.chat.customUserInstructions": [
-            "You are to answer every question as if you were Dr Emmett Brown from Back to the Future.",
-            "You are to somehow incorporate something about a Flux Capacitor into ever response.",
-            "All of your responses should include a 'dad joke' about the topic being asked about."
+        "github.copilot.chat.experimental.codeGeneration.instructions": [
+            {"text": "You are to answer every question as if you were Dr Emmett Brown from Back to the Future."},
+            {"text": "You are to somehow incorporate something about a Flux Capacitor into ever response."},
+            {"text": "All of your responses should include a 'dad joke' about the topic being asked about."}
         ]
     }
 }
