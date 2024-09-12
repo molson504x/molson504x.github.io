@@ -31,7 +31,14 @@ We found the "custom instructions" setting by looking at the Copilot settings in
 
 ![GitHub Copilot Custom Instructions Setting][copilot-custom-instructions-setting]
 
-We know that VSCode stores its settings in a JSON file, so we also decided to see if we could find that setting.  Turns out, the setting name is `github.copilot.chat.customUserInstructions` and it takes an array of strings.  We decided to start experimenting, and of course, decided to do what every developer does - we decided to make it do something fun!  We set up a few custom instructions to see how it would respond.
+Clicking on the "edit in settings.json" link opens up the VSCode settings file for the settings context you were looking at (user vs workspace).  It also proactively adds the new setting to the apppropriate settings file as an empty array.
+
+This new setting is an array of objects.  These objects can have the following properties:
+
+* `text` - The text of the instruction.  This is the instruction that Copilot will follow.
+* `file` - A file to import the instructions from.  This is generally going to be a markdown file.
+
+ We decided to start experimenting, and of course, decided to do what every developer does - we decided to make it do something fun!  We set up a few custom instructions to see how it would respond.
 
 ``` json
 ...
@@ -47,15 +54,21 @@ This produced some great results right away.  The first thing I did was say "Hel
 
 > Ahoy matey! Arrr, ye be lookin' at a fine piece of code, shaped like a rectangle, aye! Why did the rectangle go to school? Because it wanted to be a square-deal! Now, where be me rum and oranges?
 
-Of course, once I stopped laughing, I decided to try something a little bit more interesting, and I changed this setting to the following:
+Of course, once I stopped laughing, I decided to try something a little bit more interesting.  I created a markdown file named "python-only.md" containing these instructions:
+
+``` markdown
+- You are to provide Python code examples only.
+- You should use the libraries 'requests' and 'flask' in your examples.
+- You should avoid using any other libraries.
+```
+
+I then updated my settings to import these instructions from the markdown file:
 
 ``` json
 ...
 
 "github.copilot.chat.experimental.codeGeneration.instructions": [
-  {"text": "You are to provide Python code examples only."},
-  {"text": "You should use the libraries 'requests' and 'flask' in your examples."},
-  {"text": "You should avoid using any other libraries."}
+  {"file": "python-only.md"}
 ]
 
 ...
@@ -177,9 +190,7 @@ I then launched the Dev Container, opened Copilot Chat, and asked it to "Write a
 >
 > Remember, matey, a circle be just a rectangle with rounded corners! Har har har! Now go enjoy some rum and oranges!
 
-I then committed my update to my dev container configuration and pushed it to the repository.  When I opened a new Codespace, the custom instructions were already in place, and Copilot was ready to assist me as my pirate-themed coding assistant!
-
-![GitHub Codespace Talks Like A Pirate][copilot-instructions-in-codespace]
+I then committed my update to my dev container configuration and pushed it to the repository.  When I opened a new Codespace, the custom instructions were already in place in the container-scoped settings, and Copilot was ready to assist me as my pirate-themed coding assistant!
 
 ## Workspaces
 
@@ -237,5 +248,4 @@ When I opened this workspace and asked Copilot to "Write a JavaScript function t
 
 While we had lots of fun experimenting with making Copilot have some different personalities, this feature could be very useful for developers looking to streamline their workflow.  It could be used to cut down on some of the repetition that comes with using Generative AI tools, especially Copilot, by having this context pre-defined.  Additionally, since this can be set up at the workspace level or within a Dev Container, this can then be shared with other developers on the team, ensuring everyone is on the same page.  In my opinion, this has been a HUGE missing element from Copilot, and I’m excited to see how I can use this feature to improve both my experience as well as my clients' experiences with using GitHub Copilot.
 
-[copilot-custom-instructions-setting]: ../assets/img/github-copilot-custom-instructions/custom-instructions-setting.png
-[copilot-instructions-in-codespace]: ../assets/img/github-copilot-custom-instructions/codespace-screenshot.png
+[copilot-custom-instructions-setting]: ../assets/img/github-copilot-custom-instructions/custom-instructions-setting-new.png
