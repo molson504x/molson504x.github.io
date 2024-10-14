@@ -1,6 +1,6 @@
 ---
 layout: post
-title: GitHub Actions Runners - `ubuntu-latest` and PIP
+title: GitHub Actions Runners - Python and the Ubuntu 24.04 image
 date: 2024-09-13 20:00 -0400
 description: >
   Earlier this morning, my team encoutered an error related to a breaking change in python while using the `ubuntu-latest` runner in GitHub Actions.  This post is a quick write-up on how we resolved the issue and what the root cause was.
