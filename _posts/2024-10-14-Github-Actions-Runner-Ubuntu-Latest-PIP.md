@@ -1,10 +1,20 @@
 ---
 layout: post
-title: GitHub Actions Runners - Python and the Ubuntu 24.04 image
+title: Lessons learned from GitHub Actions breaking change in ubuntu-latest runner image
 date: 2024-09-13 20:00 -0400
 description: >
-  Earlier this morning, my team encoutered an error related to a breaking change in python while using the `ubuntu-latest` runner in GitHub Actions.  This post is a quick write-up on how we resolved the issue and what the root cause was.
+  GitHub pushed an update to the `ubuntu-latest` runner tag which updated it to use the `ubuntu-24.04` image (as opposed to using the `ubuntu-22.04` image). This caused breaking changes in, among other things, installing Python modules using PIP.  This post was originally written to document the issue and how we resolved it, but GitHub has since rolled back the change to the `ubuntu-latest` runner tag.  The post now serves as a lesson learned on why you should always install your own dependencies in GitHub Actions workflows.
 tags: [GitHub, Actions, Ubuntu, Runners, PIP, Python]
+---
+
+## Note - They fixed it!
+
+The team at GitHub is fixing this issue by rolling back the change to the `ubuntu-latest` tag definition, meaning it will now revert back to targeting `ubuntu-22.04` rather than the `ubuntu-24.04` image.  This should resolve the issue for most users, but it's still a good idea to follow the best practices outlined in this post to prevent future issues, which is why I'm leaving this post up.  For a synopsis of what happened and why GitHub made the change (and then reverted the change), [this comment from Larissa Fortuna (@lkfortuna)](https://github.com/actions/runner-images/issues/10636#issuecomment-2417303444) -  the GitHub Actions Product Manager - should summarize what went wrong and the next steps.  I appreciate the transparency here, the quick response from the GitHub team, the humility to admit they made a mistake and caused a lot of problems, and the self-awareness to know that they need to do better in the future.  I'm glad that this issue was resolved quickly and that the GitHub team is taking steps to prevent it from happening again.
+
+The best lesson learned by this all is that you shouldn't depend on dependencies being installed in a runner image, and as a best practice you should always install your own dependencies in your GitHub Actions workflows.  By enacting this practice, you'll not only be protected from breaking changes such as this, but also have more portability in your workflows since they won't depend on the underlying runner image having the dependencies you need.  That's my take-away from this whole situation, and I hope that you can learn from it as well.
+
+And now, onto the original post.  Enjoy :pencil2:
+
 ---
 
 Earlier this morning, my team encoutered an error related to a breaking change in python while using the `ubuntu-latest` runner in GitHub Actions.  This post is a quick write-up on how we resolved the issue and what the root cause was.
