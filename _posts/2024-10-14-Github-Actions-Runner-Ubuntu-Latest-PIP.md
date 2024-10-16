@@ -3,7 +3,7 @@ layout: post
 title: Lessons learned from GitHub Actions breaking change in ubuntu-latest runner image
 date: 2024-09-13 20:00 -0400
 description: >
-  GitHub pushed an update to the `ubuntu-latest` runner tag which updated it to use the `ubuntu-24.04` image (as opposed to using the `ubuntu-22.04` image). This caused breaking changes in, among other things, installing Python modules using PIP.  This post was originally written to document the issue and how we resolved it, but GitHub has since rolled back the change to the `ubuntu-latest` runner tag.  The post now serves as a lesson learned on why you should always install your own dependencies in GitHub Actions workflows.
+  GitHub pushed an update to the ubuntu-latest runner tag which updated it to use the ubuntu-24.04 image (as opposed to using the ubuntu-22.04 image). This caused breaking changes in, among other things, installing Python modules using PIP.  This post was originally written to document the issue and how we resolved it, but GitHub has since rolled back the change to the ubuntu-latest runner tag.  The post now serves as a lesson learned on why you should always install your own dependencies in GitHub Actions workflows.
 tags: [GitHub, Actions, Ubuntu, Runners, PIP, Python]
 ---
 
