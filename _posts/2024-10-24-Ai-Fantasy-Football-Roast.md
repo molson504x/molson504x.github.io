@@ -1,7 +1,7 @@
 ---
 layout: post
 title: RoastGPT - An AI-Powered Fantasy Football Weekly Recap Generator
-date: 2024-10-02 10:00:00-0400
+date: 2024-10-24 10:00:00-0400
 description: >
   I'm in a couple of Fantasy Football leagues, and one of my favorite parts of Fantasy Football is the trash talk. I wanted to build an AI that could roast my friends' teams for me. So I built did what any good developer would do - I wrote a script which uses an Azure OpenAI service to generate a recap of the week's matchups, complete with roasts for each team.  
 img: ai-fantasy-football-roast/hero.png
@@ -76,97 +76,11 @@ Whew!  Ok, now that that's all done, we can FINALLY start to form our prompts.
 
 For this exercise, I'm starting with the matchup prompts.  I want to generate a prompt for each matchup, so I loop through the matchups and create a `RelevantBoxScoreInfo` object for each team in the matchup.  I then serialize the object into a JSON string and pass it into the prompt.
 
-I decided to split this prompt into two parts - a "system" prompt and a "user" prompt.  Odds are I didn't have to do that; I could have just done it as one prompt.  This system prompt contains a lot of stuff, namely examples of matchup roasts and how the data for each matchup is going to be provided.  
+I decided to split this prompt into two parts - a "system" prompt and a "user" prompt.  Odds are I didn't have to do that; I could have just done it as one prompt.  But let me explain why I did it this way.
 
-<details>
-<summary>Click here to see the system prompt</summary>
-<blockquote>
-You are to respond in the voice of a sports entertainment announcer who roasts fantasy football matchups.  These should be 2-4 sentences long with one paragraph encompassing the entire matchup, and should highlight and lowlight key areas of each team's week.  Use information from the provided box score information in your analysis.  
+A "system prompt" is a standardized set of instructions that sets the stage for the AI.  It should contain things like what kind of personality the AI should use and what kind of output is expected, along with any "guardrails" that the AI should follow.  For example, in the System Prompt I'm providing it information on the lineup positions, the personality to use ("You are to respond in the voice of a sports entertainment announcer who roasts fantasy football matchups"), and some other instructions around what I expect to be generated (2-4 sentences summarizing the matchup and roasting the teams).  I'm also telling it that it can expect information about each team including their record, current win/loss streak, and some information about the players on the team.  Oh, yeah, and I'm also updating the system prompt with examples from previous roasts so that it doesn't repeat itself and stays funny!
 
-This roast analysis will be used as part of a digest newsletter, and will be located somewhere in the middle so keep that in mind when writing it.  For all of these, assume there's an introduction and conclusion that will be written by someone else.  You're just here to roast the matchups in the middle of the newsletter.  So introductory statements like "Ladies and Gentlemen" or "Step right up!" are not necessary.  Just get right into the roasting.
-
-Are you ready?  Are you up to this task?  Be ruthless.  we can take it.  Remember - you're roasting people.  No need to be nice.
-
-## Information Provided:
-
-For each team in the matchup (home and away) you'll be given the following information:
-- Team Name
-- Team Score
-- Team Players with their individual scores (as well as what they were projected to score)
-
-This will be represented as a JSON object with the following structure:
-
-```json
-{
-  "matchupWeek": 4,
-  "homeTeam": {
-    "team_name": "home team name",
-    "team_score": 0.0,
-    "team_record": "home team record",
-    "team_rank": 4,
-    "team_next_matchup": "home team's next opponent",
-    "team_next_matchup_record": "home team's next opponent record",
-    "team_next_matchup_rank": 10,
-    "team_players": [
-      {
-        "player_name": "Home team player",
-        "player_position": "player's position",
-        "player_predicted_points": 19.43,
-        "player_actual_points": 23.6
-      },
-    ]
-  },
-  "awayTeam": {
-    "team_name": "Away team name",
-    "team_score": 0.0,
-    "team_record": "Away team record",
-    "team_rank": 10,
-    "team_next_matchup": "Away team's next opponent",
-    "team_next_matchup_record": "Away team's next opponent record",
-    "team_next_matchup_rank": 4,
-    "team_players": [
-      {
-        "player_name": "Away team player",
-        "player_position": "player's position",
-        "player_predicted_points": 23.6,
-        "player_actual_points": 19.43
-      },
-    ]
-  }
-}
-```
-
-## Roast Examples:
-
-> Concepts of a Team got steamrolled this week, putting up a sad 73 points while Mahomes tried to carry a squad that looked like it forgot how to play fantasy football. Tyreek Hill and Mike Evans combined for 10.7 points, which is like showing up to a cookout with a bag of ice. Meanwhile, Winner Winner Chicken Dinner was serving a five-course feast, dropping 165.58 points with Brock Purdy balling out and Dallas Goedert putting up 27 points like it's nothing. Concepts drops to 1-2, while Winner Winner stays undefeated at 3-0, living their best fantasy life.
-
-> Jackson5 gave it a good shot, racking up 110 points with Derrick Henry dropping 30.4 and Rashee Rice adding 29.1, but E's Armadillos took the win despite a rough start from Anthony Richardson's 5.08 points. The Armadillos were carried by Saquon Barkley's monster 33.6 points and Jonathan Taylor's 26.5, leaving just enough room to edge out Jackson5. Zay Flowers and Matt Gay didn't do much, but Barkley alone made sure the Armadillos stayed strong at 2-1, while Jackson5 remains winless at 0-3 and staring down another tough week ahead.
-
-> Winner Winner Chicken Dinner is cruising at 2-0, thanks to James Cook's explosive performance and Amon-Ra St. Brown's dazzling play, though Cooper Kupp and Dallas Goedert are cooling off like a soggy french fry. Meanwhile, Jackson5 is stuck at 0-2, despite Lamar Jackson and Derrick Henry holding the fort. They left Marvin Harrison Jr. on the bench while struggling with Ladd McConkey and Travis Kelce, making their road to victory look like a bumpy ride ahead.
-</blockquote>
-</details>
-
-The user prompt is a bit simpler - it's a template string which I'll fill in dynamically:
-
-<details>
-<summary>Click here to see the user prompt</summary>
-<blockquote>
-NEXT MATCHUP: {home_team_name} vs. {away_team_name}.
-
-{home_team_name} is currently {home_team_record} and ranks {home_team_rank} in the league.  Their next matchup is against {home_team_next_opponent} who is currently {home_team_next_opponent_record} and ranks {home_team_next_opponent_rank} in the league.
-
-{away_team_name} is currently {away_team_record} and ranks {away_team_rank} in the league.  Their next matchup is against {away_team_next_opponent} who is currently {away_team_next_opponent_record} and ranks {away_team_next_opponent_rank} in the league.
-
-Matchup Information:
-{matchup_info}
-
-Do your worst.  Remember - you're roasting people.  No need to be nice.
-</blockquote>
-</details>
-
-I'm 100% egging on the AI here.  I want it to be agressive and actually roast the matchup rather than just analyze it.
-
-This is also a template string - you can see placeholders such as `{home_team_name}` and `{matchup_info}`.  These placeholders will be replaced with the actual data when the prompt is generated.
+A "user prompt" is the information that the user provides.  For example, when you use a service like ChatGPT or Google Gemini or Copilot, they have a system prompt telling them to be helpful chat bots that are to provide information to a user based on what the user asks, and the user prompt is the question or request that the user provides.  In this case, the system prompt is the instructions for the AI to roast the matchup, and the user prompt is the actual matchup data that the AI should use to generate the roast.  In the case of RoastGPT, the user prompt is a template string that contains placeholders for the team names, records, ranks, and the player stats.  The AI will use this information to generate the roast.
 
 ### Forming the intro and outro prompts
 
