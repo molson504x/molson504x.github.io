@@ -146,7 +146,7 @@ All in all, the AI did a pretty good job....  Here's how it handled this week's 
 >
 > [TEAM 1]is scrapping the bottom of the barrel with a whimpering 67.86 points this week, as if their lineup was written by someone binge-watching a soap opera instead of strategizing for fantasy football. Tyreek Hill caught fewer balls than a toddler at a birthday party, scoring just 2.3 points, while Mike Evans decided to join the invisible man club as his injuries took him out of the game. Meanwhile, [TEAM 2] flexed its muscles with a whopping 114.26, riding high on Jalen Hurts’ surprising performance and victory laps Cade Otton, who seemed to be practicing their “how to play against [TEAM 1]” game plan. As [TEAM 2] moves on to face [TEAM 2 NEXT OPPONENT], [TEAM 1] will need divine intervention to turn that sinking ship around in their next matchup, otherwise they might be on the bye week of life for the rest of the season!
 >
-> _{{{ The rest of the teams get roasted here }}}..._
+> _The rest of the teams get roasted here..._
 >
 > And that's a wrap on this week's fantasy football shenanigans! Whether your team is soaring like a majestic dragon or floundering like my failed attempts to convince you I'm not just an AI, the only thing we know for sure is: next week’s matchups might just deliver more plot twists than a daytime soap opera. Remember to set those lineups, and as always, the Cowboys suck!
 
