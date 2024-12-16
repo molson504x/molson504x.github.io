@@ -1,0 +1,33 @@
+---
+layout: post
+title: GitHub Actions Hosted Compute Networking
+date: 2024-12-17 10:00:00-0400
+description: >
+  I'm currently working with a client who has an interesting request - "we want to use GitHub-Hosted Actions runners, but we need to call out to a service that is only available on our corporate network". GitHub has a feature for this called "Hosted Compute Networking" which aims to solve this exact problem.  But, there's some extra concerns to be aware of when using this feature, and setup isn't as straightforward as you might think.  In this post, I'll walk through how to set up Hosted Compute Networking, and some of the gotchas you might run into.
+img: ai-fantasy-football-roast/hero.png
+tags: [GitHub, Actions, Azure, DevOps]
+---
+GitHub Actions depend on runners to run the actions workflows.  There's generally two options - GitHub-Hosted and Self-Hosted runners.  GitHub-Hosted runners are provided by GitHub, which means there's no compute to manage.  Self-Hosted runners are runners that you manage yourself, which means you can run them on your own infrastructure, and you can customize them to your needs but you have to manage the infrastructure on your own.  What if I wanted to use GitHub-Hosted runners, but I need to access some internal resources?  This is where GitHub Actions Hosted Compute Networking comes in.
+
+## The Problem
+
+It's not uncommon for a build and deployment process to require accessing resources which are hosted on an internal network.  Imagine a scenario where you have a build process that needs to make updates to a database that is only available within your firewalls.  If you're using GitHub Actions, you might be using GitHub-Hosted runners to run your workflows.  GitHub-Hosted runners are hosted by GitHub, which means they are running in a GitHub datacenter.  This means that they don't have access to your internal network.
+
+A common solution to this problem is to just use Self-Hosted runners for certain tasks and GitHub-Hosted runners for others.  The Self-Hosted runners would be used for tasks that require access to internal resources, and the GitHub-Hosted runners would be used for tasks that don't require access to internal resources.  This works, but it means you have to manage the infrastructure for the Self-Hosted runners and the runners are inconsistent.  Since Self-Hosted runners and GitHub-Hosted runners work differently, this can lead to inconsistencies in your build and deployment process, which can be difficult to debug.
+
+To understand the problem further, you have to understand what your main options are.  Spoiler alert - they all have some trade-offs.
+
+### Understand your options
+
+![Runner Types](/assets/img/2024-12-17-Actions-Hosted-Compute-Networking/runner-types.png)
+_The main runner types, and connectivity options_
+
+There's four main options for connectivity with GitHub Runners:
+
+- GitHub-Hosted Runners (the generic ones): These are what you get when you call up `ubuntu-latest` runners, or similar.  They're hosted by GitHub, and have no access to your network.  So if you need these to have access to anything, it's gotta be publicly accessible.  Obviously, this isn't a great option if you need your internal resources to stay internal, so let's move on.
+- Self-Hosted Runners (these are usually VMs): This is what you get when you spin up a VM, and install the GitHub Actions Runner Agent on it.  These can access your network, but you have to manage the infrastructure.  They lack a lot of scalability, and aren't ephemeral (so your workflows don't start from a clean slate each time they run).  These are a good option if you need custom hardware or need to have a lot of control over the environment, but obviously with the scalability, management, and consistency trade-offs this is not the most ideal option usually.  Think about it - you'll need more than one runner usually in an organization, so you'd need to spin up multiple VMs, and manage them all.  And when they're idle, they're still costing you money.  And you have to manage patching, updates, etc.  It's a lot of work, which is why I recommend....
+- GitHub Actions Runner Controller (ARC - the Kubernetes option): I've written [a blog post](https://blog.matt-o.com/My-Thoughts-On-The-GitHub-Actions-Runner-Controller) about this before, but let's recap.  This is a Kubernetes Operator implementation of GitHub Actions Runners.  The runners are ephemeral (meaning they run a job and then die), highly scalable (new runner pods spin up and down as needed), and they're hosted on your Kubernetes cluster which presumably has access to your network.  This is a great option if you're already using Kubernetes, and you want to have a scalable, ephemeral runner setup.  But, it's not the most straightforward to set up, and it requires you to have a Kubernetes cluster.  So, if you're not already using Kubernetes, this might be a bit of a learning curve.  Unfortunately, you'll still have networking overhead along with the overhead of patching and updating the Kubernetes cluster, and if your environment has a lot of dependencies or customizations required for your workflows you'll also need to manage your own runner container images.  It's not perfect, but in my opinion it's usually a better option than the self-hosted VMs are because you get scalable and ephemeral runners.  But I don't want to manage the compute at all - at least that was the requirement.  This brings us to...
+- GitHub-Hosted Runners with Hosted Compute Networking: This is probably the newest option.  Essentially what this does is plugs the "black-box" GitHub-Hosted runners into your network via Azure VNets.  This is a great option if you want to use GitHub-Hosted runners, but you need them to access resources on your network.  This is the option I'm going to focus on in this post.
+
+## What is Hosted Compute Networking?
+
